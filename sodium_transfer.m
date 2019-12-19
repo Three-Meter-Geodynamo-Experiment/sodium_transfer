@@ -64,7 +64,8 @@ s_vector = [n2_surface(h_vector(1))];   % interface of N2 and the wall
 T_N2_vector=[Tn2_0];                    % temperature of N2 in the 3M
 m_N2_vector=[V_n2_0*1.5];               % mass of the N2
 T_Na_vector = [Tna0];                   % temperature of sodium
-power_vector = [0, 0, 0, 0];
+power_vector = [0, 0, 0, 0];            % powers vector
+dT_vector = [0];                        % temperature drop in the pipe 
 
 while V_na > 0.1 && step < 10^5
     
@@ -112,7 +113,7 @@ while V_na > 0.1 && step < 10^5
     
     %% now energy exchange
     % Convective Heat Transfer Coefficients [W/m2/K]
-    h_n2 = 5;                           % 2 seems like an average number for N2
+    h_n2 = 2;                           % 2 seems like an average number for N2
     h_na = 50;                          % the lowest I found for a liquid to metal is 50
     
     %% N2 heat exchange
@@ -142,12 +143,13 @@ while V_na > 0.1 && step < 10^5
     pipe_surf = pi*1.5*25.4/1000*h;
     power_loss_tube = pipe_surf*h_n2*(T_na_next-T_n2);
     
+    power_vector = [power_vector; [dE1, dE2, dE4,power_loss_tube/fps]*fps];
+    
     s_pipe = pi/4*(1.5*25.4/1000)^2;
     v_pipe = (-flux)/s_pipe;
-    time_in_pipe = h/v_pipe;
+    pipe_dT = 2*h*h_n2*(T_na-T_n2)/(Cp_na*rho_na*1.5*25.4/1000*v_pipe);
     
-    power_vector = [power_vector; [dE1, dE2, dE4,power_loss_tube/fps]*fps];
-
+    dT_vector = [dT_vector; pipe_dT];
 end
 
 
@@ -173,5 +175,13 @@ figure(3)
 plot(t_vector,power_vector,'LineWidth',2)
 legend('wall-N2','Na-N2','wall-Na','diptube','Location','north')
 xlabel('Time, s')
+ylabel('Power, W');
 title('Heat exchange power')
+set(gca,'FontSize',15)
+
+figure(4)
+plot(t_vector,dT_vector,'r','LineWidth',2)
+xlabel('Time, s')
+ylabel('Temperature drop in the diptube, K');
+title('Temperature drop')
 set(gca,'FontSize',15)
